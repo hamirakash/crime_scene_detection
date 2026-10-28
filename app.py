@@ -1,7 +1,7 @@
 
 from flask import Flask, request, jsonify, render_template, send_from_directory
 from database import initialize_database, get_connection
-from ultralytics import YOLO
+from onnx_detector import ONNXDetector
 import cv2
 import numpy as np
 import os
@@ -13,8 +13,8 @@ initialize_database()
 app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024
 
 # Load the AI model
-MODEL_PATH = os.path.join(app.root_path, "yolo11n.pt")
-model = YOLO(MODEL_PATH)
+MODEL_PATH = os.path.join(app.root_path, "yolo11n.onnx")
+model = ONNXDetector(MODEL_PATH)
 
 # Create output folder
 OUTPUT_FOLDER = os.path.join(app.root_path, "outputs")
@@ -96,8 +96,8 @@ def detect():
 
             evidence_number += 1
 
-    # Create a copy of the original image
-    annotated_image = image.copy()
+    # Run lightweight ONNX detection
+    evidence = model.predict(image, conf=0.25)
 
     # Draw evidence IDs and bounding boxes
     for item in evidence:
@@ -371,24 +371,14 @@ def detect_video():
             if not ok:
                 break
 
-            predictions = model.predict(
-                source=frame, conf=0.25, verbose=False
-            )
+            # Run ONNX detection on this video frame
+            evidence = model.predict(frame, conf=0.25)
 
-            evidence = []
-
-            for result in predictions:
-                for box in result.boxes:
-                    evidence.append({
-                        "evidence_id": f"F{second + 1:02d}-E{len(evidence) + 1:03d}",
-                        "object": result.names[int(box.cls[0])],
-                        "confidence": round(float(box.conf[0]) * 100, 2),
-                        "bounding_box": [
-                            round(value, 1)
-                            for value in box.xyxy[0].tolist()
-                        ]
-                    })
-
+            # Give each frame its own evidence IDs
+            for item in evidence:
+                item["evidence_id"] = (
+                    f'F{second + 1:02d}-{item["evidence_id"]}'
+                )
             annotated = frame.copy()
 
             for item in evidence:

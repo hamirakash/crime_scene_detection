@@ -1,6 +1,6 @@
 
 Flask
 gunicorn
-ultralytics
+onnxruntime
 opencv-python-headless
 numpy
