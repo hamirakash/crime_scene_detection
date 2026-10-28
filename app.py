@@ -65,10 +65,12 @@ def detect():
 
     # Run YOLO detection
     results = model.predict(
-        source=image,
-        conf=0.25,
-        verbose=False
-    )
+    source=image,
+    conf=0.25,
+    imgsz=320,
+    device="cpu",
+    verbose=False
+)
 
     evidence = []
     evidence_number = 1
