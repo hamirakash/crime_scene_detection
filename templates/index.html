@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Vision Lab | Crime Scene Analysis</title>
+
+<style>
+
+*{box-sizing:border-box}
+
+body{margin:0;background:#f6f7f9;color:#202124;font-family:"Segoe UI",Arial,sans-serif}
+
+header{min-height:76px;background:#fff;border-bottom:1px solid #e5e7eb;padding:15px 5%;display:flex;justify-content:space-between;align-items:center;gap:15px}
+
+.logo{font-size:23px;font-weight:800;letter-spacing:-1px}.logo span{color:#777;font-weight:400}
+
+.header-badge{background:#f4f4f5;border:1px solid #e5e7eb;border-radius:20px;padding:8px 14px;font-size:12px;color:#555}
+
+main{max-width:1400px;margin:38px auto;padding:0 24px}h1{font-size:30px;letter-spacing:-.7px;margin:0 0 8px}
+
+.subtitle{color:#777;margin:0 0 28px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:24px}
+
+.stat{background:#fff;padding:22px;border:1px solid #e5e7eb;border-radius:13px}.stat .value{font-size:27px;font-weight:700;margin-bottom:7px}.stat .label{color:#777;font-size:13px}
+
+.workspace{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(290px,1fr);gap:22px;align-items:start}
+
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:24px;margin-bottom:22px;min-width:0}
+
+.card h2{font-size:17px;margin:0 0 17px}.card-subtitle{font-size:13px;color:#888;margin-top:-8px;margin-bottom:18px}
+
+.upload-zone{border:2px dashed #d4d4d8;background:#fafafa;border-radius:12px;padding:27px;text-align:center}.upload-zone p{color:#888;font-size:13px}
+
+input[type=file]{display:none}.attach-button{background:#fff;color:#18181b;border:1px solid #d4d4d8;display:inline-flex;align-items:center;gap:8px;margin-top:12px}.attach-button:hover{background:#f4f4f5}.attached-file{display:none;align-items:center;gap:14px;text-align:left;background:#fff;border:1px solid #d4d4d8;border-radius:12px;padding:12px;margin-top:18px;min-width:0}.attached-file img{width:72px;height:64px;object-fit:cover;border-radius:8px;background:#f4f4f5}.attached-details{min-width:0;flex:1}.attached-details strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}.attached-details small{color:#16a34a;font-size:12px}.remove-file{background:#fff;color:#b91c1c;border:1px solid #fecaca;padding:9px 12px;white-space:nowrap}.remove-file:hover{background:#fef2f2}button,.download{display:inline-block;background:#18181b;color:#fff;border:0;padding:13px 22px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none}
+
+button:hover,.download:hover{background:#3f3f46}button:disabled{opacity:.5;cursor:wait}.analyze-button{width:100%;margin-top:16px}
+
+#statusMessage{font-size:13px;color:#666;margin-top:14px}
+
+.canvas{background:#f4f4f5;border:1px solid #e4e4e7;border-radius:10px;min-height:320px;display:flex;justify-content:center;align-items:center;overflow:hidden;padding:10px}
+
+.image-stage{position:relative;display:none;max-width:100%;line-height:0}
+
+.image-stage img{display:block;max-width:100%;max-height:650px;width:auto;height:auto;object-fit:contain}
+
+#highlightOverlay{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+
+.placeholder{text-align:center;color:#999;padding:30px}.placeholder-icon{font-size:45px;margin-bottom:12px}
+
+#objectList{height:390px;overflow-y:auto;overscroll-behavior:contain;padding:4px 8px 4px 2px;scrollbar-gutter:stable;border:1px solid #eceef1;border-radius:10px;background:#fcfcfd}
+
+.object-item{border:1px solid #e5e7eb;border-radius:10px;padding:15px;margin:8px 2px 12px;background:white;transition:border-color .15s,background .15s}
+
+.object-item.is-selected{border-color:#16a34a;background:#f0fdf4}.object-top{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:12px}
+
+.object-name{font-weight:600;text-transform:capitalize}.evidence-id{font-size:12px;background:#f4f4f5;border-radius:5px;padding:5px 8px;color:#555}
+
+.confidence-row{display:flex;align-items:center;gap:10px}.progress-track{flex:1;height:7px;background:#e5e7eb;border-radius:10px;overflow:hidden}.progress-fill{background:#27272a;height:100%;border-radius:10px}.confidence-value{font-size:12px;color:#555}
+
+.check-label{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin-bottom:12px}.check-label input{width:17px;height:17px;accent-color:#16a34a}
+
+.empty-state{text-align:center;color:#999;font-size:13px;padding:35px 10px}.download{margin-top:16px;display:none;text-align:center}
+
+.review-button{width:100%;margin-top:14px;display:none}.review-hint{font-size:12px;color:#777;margin-top:12px}
+
+.selected-panel{display:none;margin-top:18px;border:1px solid #bbf7d0;background:#f0fdf4;border-radius:12px;padding:18px}
+
+.selected-panel h3{font-size:15px;color:#166534;margin:0 0 12px}.selected-row{background:white;border:1px solid #dcfce7;border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:13px}
+
+.selected-total{font-size:13px;font-weight:700;color:#166534;margin:12px 0 0}
+
+.notice{background:#fafafa;border:1px solid #e5e7eb;padding:15px;border-radius:9px;color:#666;font-size:12px;line-height:1.7}
+
+#dashboardView{display:none}
+
+#homeView {
+    max-width:1100px;
+    margin:40px auto 70px;
+}
+
+.upload-options {
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:22px;
+    align-items:start;
+}
+
+@media(max-width:750px) {
+    .upload-options {
+        grid-template-columns:1fr;
+    }
+}
+
+.home-hero{text-align:center;margin-bottom:26px}
+
+.home-hero h2{font-size:26px;margin:0 0 10px}
+
+.home-hero p{color:#71717a;line-height:1.7;margin:0}
+
+.home-card{padding:32px}
+
+.dashboard-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:22px;flex-wrap:wrap}
+
+.dashboard-toolbar h2{margin:0;font-size:21px}
+
+.home-button{background:white;color:#18181b;border:1px solid #d4d4d8}
+
+.home-button:hover{background:#f4f4f5}
+
+footer{text-align:center;padding:25px;color:#999;font-size:12px}
+
+@media(max-width:850px){.workspace{grid-template-columns:1fr}#objectList{height:300px}}
+
+@media(max-width:600px){.stats{grid-template-columns:1fr}header{padding:15px 20px}main{padding:0 15px}h1{font-size:25px}.card{padding:17px}.header-badge{font-size:10px}}
+
+</style>
+
+</head>
+
+<body>
+
+<header><div class="logo">VISION<span>LAB</span></div><div class="header-badge">AI Forensic Analysis Prototype</div></header>
+
+<main>
+
+<h1>Crime Scene Analysis Workspace</h1>
+
+<p class="subtitle">AI-powered object detection and evidence tagging</p>
+
+<div id="homeView">
+
+  <div class="home-hero"><h2>Start a New Analysis</h2><p>Upload a crime-scene image to detect common objects and review potential evidence in your dedicated analysis dashboard.</p></div>
+  <div class="upload-options">
+
+  <section class="card home-card">
+
+    <h2>Image Upload</h2><p class="card-subtitle">Select an image for automated object analysis.</p>
+
+    <div class="upload-zone">
+
+      <div style="font-size:35px">📁</div>
+
+      <strong>Upload Crime Scene Image</strong>
+
+      <p>JPG, PNG or WEBP · Maximum 10 MB</p>
+
+      <input type="file" id="imageInput" accept="image/jpeg,image/png,image/webp">
+
+      <button type="button" id="attachButton" class="attach-button">+ Choose Image</button>
+
+      <div id="attachedFile" class="attached-file" aria-live="polite">
+
+        <img id="attachedPreview" alt="Selected image preview">
+
+        <div class="attached-details">
+
+          <strong id="attachedName"></strong>
+
+          <small>✓ Image attached</small>
+
+        </div>
+
+        <button type="button" id="removeFileButton" class="remove-file">Remove</button>
+
+      </div>
+
+    </div>
+
+    <button class="analyze-button" id="analyzeButton" type="button" disabled>Run AI Detection</button>
+
+    <div id="statusMessage" role="status">System ready. Select an image to begin.</div>
+
+  </section>
+
+<section class="card home-card" id="videoUploadCard">
+  <h2>Video Upload</h2>
+  <p class="card-subtitle">
+    Select a video for YOLO11 frame analysis.
+  </p>
+
+  <div class="upload-zone">
+    <div style="font-size:35px">🎬</div>
+    <strong>Upload Crime Scene Video</strong>
+    <p>MP4, AVI or MOV · Maximum 10 MB</p>
+
+    <input
+      id="videoInput"
+      type="file"
+      accept=".mp4,.avi,.mov"
+    >
+
+    <button type="button" id="chooseVideoButton"
+      class="attach-button">
+      + Choose Video
+    </button>
+
+    <p id="videoFileName"></p>
+  </div>
+
+  <button type="button" id="analyzeVideoButton"
+    class="analyze-button" disabled>
+    Run Video Detection
+  </button>
+
+  <p id="videoStatus" role="status"></p>
+</section>
+
+</div> <!-- End of upload-options -->
+
+<div id="videoResults" style="display:none"></div>
+
+</div> <!-- End of homeView -->
+
+<div id="dashboardView">
+
+<div class="dashboard-toolbar"><div><h2>Analysis Dashboard</h2><p class="card-subtitle" style="margin:7px 0 0">Review detected objects and select potential evidence</p></div><button id="homeButton" class="home-button" type="button">← Home / New Analysis</button></div>
+
+<div class="stats">
+
+  <div class="stat"><div class="value" id="totalObjects">—</div><div class="label">Objects Detected</div></div>
+
+  <div class="stat"><div class="value" id="totalEvidence">—</div><div class="label">Potential Evidence Selected</div></div>
+
+  <div class="stat"><div class="value" id="analysisStatus">Ready</div><div class="label">Analysis Status</div></div>
+
+</div>
+
+<div class="workspace">
+
+  <div class="left-panel">
+
+    <section class="card">
+
+      <h2>Detection Canvas</h2><p class="card-subtitle">Select objects on the right and click Review to highlight them in green.</p>
+
+      <div class="canvas">
+
+        <div class="placeholder" id="placeholder"><div class="placeholder-icon">▧</div>No image analyzed yet</div>
+
+        <div class="image-stage" id="imageStage"><img id="resultImage" alt="AI detection result"><svg id="highlightOverlay" xmlns="http://www.w3.org/2000/svg" aria-label="Selected object highlights"></svg></div>
+
+      </div>
+
+      <a id="downloadButton" class="download" download="reviewed_evidence.jpg">Download Reviewed Image</a>
+
+      <div id="selectedEvidencePanel" class="selected-panel" aria-live="polite">
+
+        <h3>Selected Potential Evidence</h3>
+
+        <div id="selectedEvidenceList"></div>
+
+        <p id="selectedTotal" class="selected-total"></p>
+
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="right-panel">
+
+    <section class="card">
+
+      <h2>Detected Objects</h2>
+
+      <p class="card-subtitle">Object labels, evidence IDs and confidence scores</p>
+
+      <div id="objectList"><div class="empty-state">No detections available.<br>Upload and analyze an image.</div></div>
+
+      <p class="review-hint">Scroll inside the box to view all detected objects. Select objects, then click Review to highlight them.</p>
+
+      <button id="reviewButton" class="review-button" type="button">Review Selected Evidence</button>
+        <div id="saveCasePanel" style="display:none;margin-top:18px;padding-top:18px;border-top:1px solid #e5e7eb">
+          <label for="caseName" style="display:block;font-size:13px;font-weight:600;margin-bottom:8px">Investigation Case Name</label>
+          <input id="caseName" type="text" maxlength="150" placeholder="e.g. Investigation 001" style="display:block;width:100%;padding:12px;border:1px solid #d4d4d8;border-radius:8px;font:inherit;margin-bottom:12px">
+          <button id="saveCaseButton" type="button" style="width:100%">Save Investigation Case</button>
+          <p id="saveCaseMessage" role="status" style="font-size:13px;color:#666;margin:10px 0 0"></p>
+        </div>
+
+    </section>
+
+    <section class="card">
+
+      <h2>Analysis Information</h2>
+
+      <div class="notice"><strong>AI Model:</strong> YOLO11 Nano<br><strong>Task:</strong> Object Detection<br><strong>Evidence Tags:</strong> Automatic object IDs<br><strong>Potential Evidence:</strong> Investigator selection<br><strong>Verification:</strong> Human review required</div>
+
+    </section>
+
+  </div>
+
+</div>
+
+</div>
+
+</main>
+
+<footer>VisionLab · Crime Scene Object Detection &amp; Evidence Tagging · Academic Project</footer>
+
+<script>
+
+const homeView = document.getElementById('homeView');
+
+const dashboardView = document.getElementById('dashboardView');
+
+const homeButton = document.getElementById('homeButton');
+
+const imageInput = document.getElementById('imageInput');
+
+const attachButton = document.getElementById('attachButton');
+
+const attachedFile = document.getElementById('attachedFile');
+
+const attachedPreview = document.getElementById('attachedPreview');
+
+const attachedName = document.getElementById('attachedName');
+
+const removeFileButton = document.getElementById('removeFileButton');
+
+let previewUrl = null;
+
+function clearAttachedImage() {
+
+  if (previewUrl) URL.revokeObjectURL(previewUrl);
+
+  previewUrl = null;
+
+  imageInput.value = '';
+
+  attachedPreview.removeAttribute('src');
+
+  attachedName.textContent = '';
+
+  attachedFile.style.display = 'none';
+
+  attachButton.textContent = '+ Choose Image';
+
+  analyzeButton.disabled = true;
+
+}
+
+function updateAttachedImage() {
+
+  const file = imageInput.files[0];
+
+  if (previewUrl) URL.revokeObjectURL(previewUrl);
+
+  previewUrl = null;
+
+  if (!file) { clearAttachedImage(); return; }
+
+  if (!['image/jpeg','image/png','image/webp'].includes(file.type) || file.size > 10 * 1024 * 1024) {
+
+    clearAttachedImage();
+
+    document.getElementById('statusMessage').textContent = 'Choose a JPG, PNG or WEBP image under 10 MB.';
+
+    return;
+
+  }
+
+  previewUrl = URL.createObjectURL(file);
+
+  attachedPreview.src = previewUrl;
+
+  attachedName.textContent = file.name;
+
+  attachedFile.style.display = 'flex';
+
+  attachButton.textContent = '↻ Change Image';
+
+  analyzeButton.disabled = false;
+
+}
+
+const resultImage = document.getElementById('resultImage');
+
+const imageStage = document.getElementById('imageStage');
+
+const overlay = document.getElementById('highlightOverlay');
+
+const analyzeButton = document.getElementById('analyzeButton');
+
+const reviewButton = document.getElementById('reviewButton');
+
+const objectList = document.getElementById('objectList');
+const saveCasePanel = document.getElementById('saveCasePanel');
+const saveCaseButton = document.getElementById('saveCaseButton');
+const saveCaseMessage = document.getElementById('saveCaseMessage');
+const caseNameInput = document.getElementById('caseName');
+let savedCaseId = null;
+
+
+const selectedPanel = document.getElementById('selectedEvidencePanel');
+
+let detectedEvidence = [];
+
+let selectedIds = new Set();
+
+let reviewedIds = new Set();
+
+
+
+function showHome() {
+
+  dashboardView.style.display = 'none';
+
+  homeView.style.display = 'block';
+
+  clearAttachedImage();
+
+  resetResults();
+
+  document.getElementById('statusMessage').textContent = 'System ready. Select an image to begin.';
+
+  window.scrollTo({top:0,behavior:'smooth'});
+
+}
+
+
+
+function showDashboard() {
+
+  homeView.style.display = 'none';
+
+  dashboardView.style.display = 'block';
+
+  window.scrollTo({top:0,behavior:'smooth'});
+
+}
+
+
+
+function resetCaseSaving() {
+  savedCaseId = null;
+  saveCasePanel.style.display = 'none';
+  saveCaseButton.disabled = false;
+  saveCaseButton.textContent = 'Save Investigation Case';
+  saveCaseMessage.textContent = '';
+}
+
+function clearHighlights() {
+
+  overlay.replaceChildren();
+
+}
+
+
+
+function resetResults() {
+
+  resetCaseSaving();
+  caseNameInput.value = '';
+  detectedEvidence = [];
+
+  selectedIds.clear();
+
+  reviewedIds.clear();
+
+  clearHighlights();
+
+  resultImage.removeAttribute('src');
+
+  imageStage.style.display = 'none';
+
+  document.getElementById('placeholder').style.display = 'block';
+
+  const download = document.getElementById('downloadButton');
+
+  download.style.display = 'none';
+
+  download.removeAttribute('href');
+
+  reviewButton.style.display = 'none';
+
+  reviewButton.textContent = 'Review Selected Evidence';
+
+  selectedPanel.style.display = 'none';
+
+  document.getElementById('totalObjects').textContent = '—';
+
+  document.getElementById('totalEvidence').textContent = '—';
+
+  document.getElementById('analysisStatus').textContent = 'Ready';
+
+  objectList.innerHTML = '<div class="empty-state">Run detection to view results.</div>';
+
+}
+
+
+
+attachButton.addEventListener('click', () => imageInput.click());
+
+removeFileButton.addEventListener('click', () => {
+
+  clearAttachedImage();
+
+  resetResults();
+
+  document.getElementById('statusMessage').textContent = 'Image removed. Choose another image to begin.';
+
+});
+
+imageInput.addEventListener('change', () => {
+
+  resetResults();
+
+  updateAttachedImage();
+
+  if (imageInput.files.length) {
+
+    document.getElementById('statusMessage').textContent = 'Image attached. Ready to analyze.';
+
+  }
+
+});
+
+
+
+function renderHighlights() {
+
+  clearHighlights();
+
+  if (!resultImage.naturalWidth || !resultImage.naturalHeight) return;
+
+  // Coordinates returned by YOLO refer to the original image size.
+
+  overlay.setAttribute('viewBox', `0 0 ${resultImage.naturalWidth} ${resultImage.naturalHeight}`);
+
+  overlay.setAttribute('preserveAspectRatio', 'none');
+
+  const ns = 'http://www.w3.org/2000/svg';
+
+  const scale = Math.max(resultImage.naturalWidth, resultImage.naturalHeight);
+
+  const stroke = Math.max(3, scale * 0.004);
+
+  detectedEvidence.filter(item => reviewedIds.has(item.evidence_id)).forEach(item => {
+
+    if (!Array.isArray(item.bounding_box) || item.bounding_box.length !== 4) return;
+
+    const [x1,y1,x2,y2] = item.bounding_box.map(Number);
+
+    if (![x1,y1,x2,y2].every(Number.isFinite)) return;
+
+    const rect = document.createElementNS(ns, 'rect');
+
+    rect.setAttribute('x', x1);
+
+    rect.setAttribute('y', y1);
+
+    rect.setAttribute('width', Math.max(0,x2-x1));
+
+    rect.setAttribute('height', Math.max(0,y2-y1));
+
+    rect.setAttribute('fill', '#22c55e');
+
+    rect.setAttribute('fill-opacity', '0.16');
+
+    rect.setAttribute('stroke', '#16a34a');
+
+    rect.setAttribute('stroke-width', stroke);
+
+    overlay.appendChild(rect);
+
+  });
+
+}
+
+
+
+function updateSelection() {
+
+  document.getElementById('totalEvidence').textContent = selectedIds.size;
+
+  document.querySelectorAll('.object-item').forEach(card => {
+
+    card.classList.toggle('is-selected', selectedIds.has(card.dataset.evidenceId));
+
+  });
+
+  resetCaseSaving();
+  // A changed checkbox invalidates the previous review.
+
+  reviewedIds.clear();
+
+  clearHighlights();
+
+  selectedPanel.style.display = 'none';
+
+  const download = document.getElementById('downloadButton');
+
+  download.style.display = 'none';
+
+  download.removeAttribute('href');
+
+  reviewButton.textContent = 'Review Selected Evidence';
+
+}
+
+
+
+function renderSelectedEvidence() {
+
+  const list = document.getElementById('selectedEvidenceList');
+
+  list.replaceChildren();
+
+  const selected = detectedEvidence.filter(item => reviewedIds.has(item.evidence_id));
+
+  if (!selected.length) {
+
+    selectedPanel.style.display = 'none';
+
+    return;
+
+  }
+
+  selected.forEach(item => {
+
+    const row = document.createElement('div');
+
+    row.className = 'selected-row';
+
+    row.textContent = `${item.evidence_id} · ${item.object} · ${item.confidence}% confidence`;
+
+    list.appendChild(row);
+
+  });
+
+  document.getElementById('selectedTotal').textContent = `Total Selected: ${selected.length}`;
+
+  selectedPanel.style.display = 'block';
+
+}
+
+
+
+function prepareReviewedDownload() {
+
+  const download = document.getElementById('downloadButton');
+
+  download.style.display = 'none';
+
+  download.removeAttribute('href');
+
+  if (!reviewedIds.size) return;
+
+
+
+  // The backend image already contains the YOLO boxes and labels.
+
+  // Draw the reviewed green highlights onto a real JPG for download.
+
+  if (!resultImage.complete || !resultImage.naturalWidth) return;
+
+  const canvas = document.createElement('canvas');
+
+  canvas.width = resultImage.naturalWidth;
+
+  canvas.height = resultImage.naturalHeight;
+
+  const ctx = canvas.getContext('2d');
+
+  if (!ctx) return;
+
+  ctx.drawImage(resultImage, 0, 0, canvas.width, canvas.height);
+
+
+
+  const strokeWidth = Math.max(3, Math.max(canvas.width, canvas.height) * 0.004);
+
+  ctx.lineWidth = strokeWidth;
+
+  detectedEvidence.filter(item => reviewedIds.has(item.evidence_id)).forEach(item => {
+
+    if (!Array.isArray(item.bounding_box) || item.bounding_box.length !== 4) return;
+
+    const [x1, y1, x2, y2] = item.bounding_box.map(Number);
+
+    if (![x1, y1, x2, y2].every(Number.isFinite)) return;
+
+    const w = Math.max(0, x2 - x1);
+
+    const h = Math.max(0, y2 - y1);
+
+    ctx.fillStyle = 'rgba(34, 197, 94, 0.16)';
+
+    ctx.fillRect(x1, y1, w, h);
+
+    ctx.strokeStyle = '#16a34a';
+
+    ctx.strokeRect(x1, y1, w, h);
+
+  });
+
+
+
+  try {
+
+    download.href = canvas.toDataURL('image/jpeg', 0.95);
+
+    download.style.display = 'inline-block';
+
+  } catch (error) {
+
+    console.error('Unable to prepare reviewed image download:', error);
+
+  }
+
+}
+
+
+
+function showSelectedEvidence() {
+
+  if (!selectedIds.size) {
+
+    reviewedIds.clear();
+
+    clearHighlights();
+
+    selectedPanel.style.display = 'none';
+
+    resetCaseSaving();
+    reviewButton.textContent = 'Select an object first';
+
+    return;
+
+  }
+
+  reviewedIds = new Set(selectedIds);
+
+  renderHighlights();
+
+  renderSelectedEvidence();
+
+  prepareReviewedDownload();
+
+  resetCaseSaving();
+  saveCasePanel.style.display = 'block';
+  reviewButton.textContent = 'Review Updated ✓';
+
+  selectedPanel.scrollIntoView({behavior:'smooth',block:'nearest'});
+
+}
+
+
+
+function renderObjectCards() {
+
+  objectList.replaceChildren();
+
+  if (!detectedEvidence.length) {
+
+    objectList.innerHTML = '<div class="empty-state">No supported objects detected.</div>';
+
+    reviewButton.style.display = 'none';
+
+    return;
+
+  }
+
+  detectedEvidence.forEach(item => {
+
+    const card = document.createElement('div');
+
+    card.className = 'object-item';
+
+    card.dataset.evidenceId = item.evidence_id;
+
+    const label = document.createElement('label');
+
+    label.className = 'check-label';
+
+    const checkbox = document.createElement('input');
+
+    checkbox.type = 'checkbox';
+
+    checkbox.className = 'evidence-checkbox';
+
+    checkbox.value = item.evidence_id;
+
+    checkbox.addEventListener('change', () => {
+
+      if (checkbox.checked) selectedIds.add(item.evidence_id);
+
+      else selectedIds.delete(item.evidence_id);
+
+      updateSelection();
+
+    });
+
+    label.append(checkbox, document.createTextNode('Mark as potential evidence'));
+
+    const top = document.createElement('div');
+
+    top.className = 'object-top';
+
+    const name = document.createElement('span');
+
+    name.className = 'object-name';
+
+    name.textContent = item.object;
+
+    const id = document.createElement('span');
+
+    id.className = 'evidence-id';
+
+    id.textContent = item.evidence_id;
+
+    top.append(name,id);
+
+    const confidenceRow = document.createElement('div');
+
+    confidenceRow.className = 'confidence-row';
+
+    const track = document.createElement('div');
+
+    track.className = 'progress-track';
+
+    const fill = document.createElement('div');
+
+    fill.className = 'progress-fill';
+
+    fill.style.width = `${Math.max(0,Math.min(100,Number(item.confidence)||0))}%`;
+
+    track.appendChild(fill);
+
+    const value = document.createElement('span');
+
+    value.className = 'confidence-value';
+
+    value.textContent = `${item.confidence}%`;
+
+    confidenceRow.append(track,value);
+
+    card.append(label,top,confidenceRow);
+
+    objectList.appendChild(card);
+
+  });
+
+  reviewButton.style.display = 'block';
+
+}
+
+
+
+async function analyzeImage() {
+
+  const file = imageInput.files[0];
+
+  if (!file) {
+
+    document.getElementById('statusMessage').textContent = 'Please choose an image first.';
+
+    return;
+
+  }
+
+  const status = document.getElementById('statusMessage');
+
+  analyzeButton.disabled = true;
+
+  resetResults();
+
+  status.textContent = 'AI is analyzing the image...';
+
+  document.getElementById('analysisStatus').textContent = 'Processing';
+
+  const formData = new FormData();
+
+  formData.append('image',file);
+
+  try {
+
+    const response = await fetch('/detect',{method:'POST',body:formData});
+
+    const data = await response.json();
+
+    if (!response.ok) throw new Error(data.error || 'Analysis failed');
+
+    detectedEvidence = Array.isArray(data.evidence) ? data.evidence : [];
+
+    document.getElementById('totalObjects').textContent = data.total_objects;
+
+    document.getElementById('totalEvidence').textContent = '0';
+
+    document.getElementById('analysisStatus').textContent = 'Completed';
+
+    status.textContent = 'Analysis completed. Select objects, then click Review Selected Evidence.';
+
+    resultImage.onload = () => {
+
+      renderHighlights();
+
+      if (reviewedIds.size) prepareReviewedDownload();
+
+    };
+
+    resultImage.src = data.image_url;
+
+    imageStage.style.display = 'inline-block';
+
+    document.getElementById('placeholder').style.display = 'none';
+
+    // Download is enabled only after evidence review.
+
+    renderObjectCards();
+
+    showDashboard();
+
+  } catch (error) {
+
+    status.textContent = 'Error: ' + error.message;
+
+    document.getElementById('analysisStatus').textContent = 'Failed';
+
+  } finally {
+
+    analyzeButton.disabled = !imageInput.files.length;
+
+  }
+
+}
+
+
+
+async function saveInvestigationCase() {
+  const caseName = caseNameInput.value.trim();
+  if (!caseName) {
+    saveCaseMessage.textContent = 'Please enter a case name.';
+    caseNameInput.focus();
+    return;
+  }
+  if (!reviewedIds.size) {
+    saveCaseMessage.textContent = 'Please review selected evidence before saving.';
+    return;
+  }
+  if (savedCaseId !== null) return;
+  const imageUrl = resultImage.getAttribute('src');
+  if (!imageUrl || !imageUrl.startsWith('/outputs/detection_')) {
+    saveCaseMessage.textContent = 'Detection image is unavailable.';
+    return;
+  }
+  saveCaseButton.disabled = true;
+  saveCaseMessage.textContent = 'Saving case...';
+  try {
+    const response = await fetch('/cases', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        case_name: caseName,
+        image_url: imageUrl,
+        evidence: detectedEvidence,
+        selected_evidence_ids: Array.from(reviewedIds)
+      })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Unable to save case');
+    savedCaseId = data.case_id;
+    saveCaseButton.textContent = 'Case Saved ✓';
+    saveCaseMessage.textContent = `Case #${data.case_id} saved with ${data.total_objects} detections and ${data.selected_evidence} selected evidence item(s).`;
+  } catch (error) {
+    saveCaseMessage.textContent = 'Error: ' + error.message;
+    saveCaseButton.disabled = false;
+  }
+}
+
+saveCaseButton.addEventListener('click', saveInvestigationCase);
+
+analyzeButton.addEventListener('click',analyzeImage);
+
+reviewButton.addEventListener('click',showSelectedEvidence);
+
+homeButton.addEventListener('click',showHome);
+
+const videoInput = document.getElementById('videoInput');
+const chooseVideoButton = document.getElementById('chooseVideoButton');
+const analyzeVideoButton = document.getElementById('analyzeVideoButton');
+const videoFileName = document.getElementById('videoFileName');
+const videoStatus = document.getElementById('videoStatus');
+const videoResults = document.getElementById('videoResults');
+
+chooseVideoButton.addEventListener('click', () => {
+  videoInput.click();
+});
+
+videoInput.addEventListener('change', () => {
+  const file = videoInput.files[0];
+
+  videoResults.replaceChildren();
+  videoResults.style.display = 'none';
+
+  if (!file) {
+    videoFileName.textContent = '';
+    analyzeVideoButton.disabled = true;
+    return;
+  }
+
+  const extension = file.name.split('.').pop().toLowerCase();
+
+  if (!['mp4', 'avi', 'mov'].includes(extension) ||
+      file.size > 10 * 1024 * 1024) {
+    videoFileName.textContent =
+      'Choose an MP4, AVI or MOV video under 10 MB.';
+    videoInput.value = '';
+    analyzeVideoButton.disabled = true;
+    return;
+  }
+
+  videoFileName.textContent = '✓ ' + file.name;
+  analyzeVideoButton.disabled = false;
+  videoStatus.textContent = 'Video ready to analyze.';
+});
+
+analyzeVideoButton.addEventListener('click', async () => {
+  const file = videoInput.files[0];
+  if (!file) return;
+
+  const form = new FormData();
+  form.append('video', file);
+
+  analyzeVideoButton.disabled = true;
+  videoStatus.textContent = 'Analyzing video frames...';
+  videoResults.replaceChildren();
+  videoResults.style.display = 'none';
+
+  try {
+    const response = await fetch('/detect-video', {
+      method: 'POST',
+      body: form
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Video analysis failed');
+    }
+
+    videoStatus.textContent =
+      `Completed: ${data.frames_analyzed} frames analyzed.`;
+
+    for (const frame of data.frames) {
+      const section = document.createElement('section');
+      section.className = 'card';
+
+      const title = document.createElement('h2');
+      title.textContent =
+        `Frame ${frame.frame_number} — ${frame.timestamp_seconds}s`;
+
+      const image = document.createElement('img');
+      image.src = frame.image_url;
+      image.alt = 'Analyzed video frame';
+      image.style.width = '100%';
+      image.style.maxWidth = '650px';
+      image.style.borderRadius = '8px';
+
+      const count = document.createElement('p');
+      count.textContent =
+        `Detected objects: ${frame.total_objects}`;
+
+      section.append(title, image, count);
+
+      for (const item of frame.evidence) {
+        const row = document.createElement('p');
+        row.textContent =
+          `${item.evidence_id} | ${item.object} | ${item.confidence}%`;
+        section.appendChild(row);
+      }
+
+      videoResults.appendChild(section);
+    }
+
+    videoResults.style.display = 'block';
+    videoResults.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    });
+
+  } catch (error) {
+    videoStatus.textContent = 'Error: ' + error.message;
+  } finally {
+    analyzeVideoButton.disabled = !videoInput.files.length;
+  }
+});
+
+</script>
+
+</body>
+
+</html>

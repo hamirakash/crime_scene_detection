@@ -1,0 +1,101 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VisionLab - Video Analysis</title>
+<style>
+body{font-family:Arial,sans-serif;background:#f6f7f9;color:#222;margin:0}
+header{background:white;padding:22px 6%;border-bottom:1px solid #ddd;font-size:23px;font-weight:bold}
+main{max-width:1000px;margin:35px auto;padding:0 20px}
+.card{background:white;border:1px solid #ddd;border-radius:12px;padding:24px;margin-bottom:20px}
+button{background:#18181b;color:white;border:0;border-radius:8px;padding:13px 20px;cursor:pointer}
+button:disabled{opacity:.5}
+.frame{border-top:1px solid #ddd;padding:20px 0}
+.frame img{width:100%;max-width:650px;border-radius:8px}
+a{color:#333}
+</style>
+</head>
+<body>
+<header>VISIONLAB | Video Analysis</header>
+<main>
+<a href="/">← Back to Image Analysis</a>
+<h1>Crime Scene Video Analysis</h1>
+<p>Analyze selected video frames using YOLO11.</p>
+
+<div class="card">
+<input id="video" type="file" accept=".mp4,.avi,.mov">
+<p>Maximum file size: 10 MB</p>
+<button id="analyze" onclick="analyzeVideo()">Analyze Video</button>
+<p id="status"></p>
+</div>
+
+<div id="results"></div>
+</main>
+
+<script>
+async function analyzeVideo(){
+ const file=document.getElementById("video").files[0];
+ const status=document.getElementById("status");
+ const results=document.getElementById("results");
+ const button=document.getElementById("analyze");
+
+ if(!file){status.textContent="Please select a video.";return;}
+ if(file.size>10*1024*1024){
+   status.textContent="Video must be under 10 MB.";return;
+ }
+
+ const form=new FormData();
+ form.append("video",file);
+ button.disabled=true;
+ status.textContent="Analyzing video frames...";
+ results.replaceChildren();
+
+ try{
+   const response=await fetch("/detect-video",{
+     method:"POST",body:form
+   });
+   const data=await response.json();
+
+   if(!response.ok)throw new Error(data.error||"Analysis failed");
+
+   status.textContent=
+     `Completed: ${data.frames_analyzed} frames analyzed.`;
+
+   for(const frame of data.frames){
+     const section=document.createElement("div");
+     section.className="card";
+
+     const title=document.createElement("h2");
+     title.textContent=
+       `Frame ${frame.frame_number} — ${frame.timestamp_seconds}s`;
+
+     const image=document.createElement("img");
+     image.src=frame.image_url;
+     image.alt="Analyzed video frame";
+     image.style.maxWidth="100%";
+
+     const count=document.createElement("p");
+     count.textContent=`Detected objects: ${frame.total_objects}`;
+
+     section.append(title,image,count);
+
+     for(const item of frame.evidence){
+       const row=document.createElement("p");
+       row.textContent=
+         `${item.evidence_id} | ${item.object} | ${item.confidence}%`;
+       section.appendChild(row);
+     }
+
+     results.appendChild(section);
+   }
+ }catch(error){
+   status.textContent="Error: "+error.message;
+ }finally{
+   button.disabled=false;
+ }
+}
+</script>
+</body>
+</html>

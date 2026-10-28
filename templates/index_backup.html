@@ -1,0 +1,694 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vision Lab | Crime Scene Analysis</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #f6f7f9;
+    color: #202124;
+    font-family: "Segoe UI", Arial, sans-serif;
+}
+
+header {
+    height: 76px;
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 0 5%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    font-size: 23px;
+    font-weight: 800;
+    letter-spacing: -1px;
+}
+
+.logo span {
+    color: #777;
+    font-weight: 400;
+}
+
+.header-badge {
+    background: #f4f4f5;
+    border: 1px solid #e5e7eb;
+    border-radius: 20px;
+    padding: 8px 14px;
+    font-size: 12px;
+    color: #555;
+}
+
+main {
+    max-width: 1400px;
+    margin: 38px auto;
+    padding: 0 24px;
+}
+
+h1 {
+    font-size: 30px;
+    letter-spacing: -0.7px;
+    margin: 0 0 8px;
+}
+
+.subtitle {
+    color: #777;
+    margin: 0 0 28px;
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+    margin-bottom: 24px;
+}
+
+.stat {
+    background: white;
+    padding: 22px;
+    border: 1px solid #e5e7eb;
+    border-radius: 13px;
+}
+
+.stat .value {
+    font-size: 27px;
+    font-weight: 700;
+    margin-bottom: 7px;
+}
+
+.stat .label {
+    color: #777;
+    font-size: 13px;
+}
+
+.workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.7fr) minmax(290px, 1fr);
+    gap: 22px;
+    align-items: start;
+}
+
+.card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 22px;
+}
+
+.card h2 {
+    font-size: 17px;
+    margin: 0 0 17px;
+}
+
+.card-subtitle {
+    font-size: 13px;
+    color: #888;
+    margin-top: -8px;
+    margin-bottom: 18px;
+}
+
+.upload-zone {
+    border: 2px dashed #d4d4d8;
+    background: #fafafa;
+    border-radius: 12px;
+    padding: 27px;
+    text-align: center;
+}
+
+.upload-zone p {
+    color: #888;
+    font-size: 13px;
+}
+
+input[type="file"] {
+    max-width: 100%;
+    margin-top: 12px;
+}
+
+button, .download {
+    display: inline-block;
+    background: #18181b;
+    color: white;
+    border: none;
+    padding: 13px 22px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+button:hover, .download:hover {
+    background: #3f3f46;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: wait;
+}
+
+.analyze-button {
+    width: 100%;
+    margin-top: 16px;
+}
+
+#statusMessage {
+    font-size: 13px;
+    color: #666;
+    margin-top: 14px;
+}
+
+.canvas {
+    background: #f4f4f5;
+    border: 1px solid #e4e4e7;
+    border-radius: 10px;
+    min-height: 320px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.canvas img {
+    display: none;
+    max-width: 100%;
+    max-height: 650px;
+    object-fit: contain;
+}
+
+.placeholder {
+    text-align: center;
+    color: #999;
+    padding: 30px;
+}
+
+.placeholder-icon {
+    font-size: 45px;
+    margin-bottom: 12px;
+}
+
+.object-item {
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 12px;
+}
+
+.object-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.object-name {
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.evidence-id {
+    font-size: 12px;
+    background: #f4f4f5;
+    border-radius: 5px;
+    padding: 5px 8px;
+    color: #555;
+}
+
+.confidence-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.progress-track {
+    flex: 1;
+    height: 7px;
+    background: #e5e7eb;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    background: #27272a;
+    height: 100%;
+    border-radius: 10px;
+}
+
+.confidence-value {
+    font-size: 12px;
+    color: #555;
+}
+
+.empty-state {
+    text-align: center;
+    color: #999;
+    font-size: 13px;
+    padding: 35px 10px;
+}
+
+.download {
+    margin-top: 16px;
+    display: none;
+    text-align: center;
+}
+
+.notice {
+    background: #fafafa;
+    border: 1px solid #e5e7eb;
+    padding: 15px;
+    border-radius: 9px;
+    color: #666;
+    font-size: 12px;
+    line-height: 1.7;
+}
+
+footer {
+    text-align: center;
+    padding: 25px;
+    color: #999;
+    font-size: 12px;
+}
+
+@media (max-width: 850px) {
+    .workspace {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .stats {
+        grid-template-columns: 1fr;
+    }
+
+    header {
+        padding: 0 20px;
+    }
+
+    main {
+        padding: 0 15px;
+    }
+
+    h1 {
+        font-size: 25px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <div class="logo">VISION<span>LAB</span></div>
+    <div class="header-badge">AI Forensic Analysis Prototype</div>
+</header>
+
+<main>
+    <h1>Crime Scene Analysis Workspace</h1>
+    <p class="subtitle">
+        AI-powered object detection and evidence tagging
+    </p>
+
+    <div class="stats">
+        <div class="stat">
+            <div class="value" id="totalObjects">—</div>
+            <div class="label">Objects Detected</div>
+        </div>
+
+        <div class="stat">
+            <div class="value" id="totalEvidence">—</div>
+            <div class="label">Evidence Tags Generated</div>
+        </div>
+
+        <div class="stat">
+            <div class="value" id="analysisStatus">Ready</div>
+            <div class="label">Analysis Status</div>
+        </div>
+    </div>
+
+    <div class="workspace">
+
+        <div class="left-panel">
+
+            <section class="card">
+                <h2>Image Upload</h2>
+                <p class="card-subtitle">
+                    Select an image for automated object analysis.
+                </p>
+
+                <div class="upload-zone">
+                    <div style="font-size:35px">📁</div>
+                    <strong>Upload Crime Scene Image</strong>
+                    <p>JPG, PNG or WEBP · Maximum 10 MB</p>
+
+                    <input
+                        type="file"
+                        id="imageInput"
+                        accept="image/jpeg,image/png,image/webp"
+                    >
+                </div>
+
+                <button
+                    class="analyze-button"
+                    id="analyzeButton"
+                    onclick="analyzeImage()">
+                    Run AI Detection
+                </button>
+
+                <div id="statusMessage">
+                    System ready. Select an image to begin.
+                </div>
+            </section>
+
+            <section class="card">
+                <h2>Detection Canvas</h2>
+                <p class="card-subtitle">
+                    Detected objects will be highlighted with bounding boxes.
+                </p>
+
+                <div class="canvas">
+                    <div class="placeholder" id="placeholder">
+                        <div class="placeholder-icon">▧</div>
+                        No image analyzed yet
+                    </div>
+
+                    <img id="resultImage" alt="AI detection result">
+                </div>
+
+                <a
+                    id="downloadButton"
+                    class="download"
+                    download="crime_scene_detection.jpg">
+                    Download Annotated Image
+                </a>
+            </section>
+
+        </div>
+
+        <div class="right-panel">
+
+            <section class="card">
+                <h2>Detected Objects</h2>
+                <p class="card-subtitle">
+                    Object labels, evidence IDs and confidence scores
+                </p>
+                
+                <div style="margin-bottom:16px">
+                    <button id="reviewButton"
+                            onclick="showSelectedEvidence()"
+                            style="display:none; width:100%">
+                         Review Selected Evidence
+                    </button>
+                </div>
+
+                <div id="objectList">
+                    <div class="empty-state">
+                        No detections available.<br>
+                        Upload and analyze an image.
+                    </div>
+                </div>
+                                      onclick="showSelectedEvidence()"
+                            style="display:none; width:100%">
+                         Review Selected Evidence
+                    </button>
+                </div>
+                <div id="selectedEvidencePanel"
+                     style="display:none; margin-top:20px; padding:18px;
+                            background:#f0f5ff; border:1px solid #dbeafe;
+                            border-radius:12px;">
+
+                     <h3 style="margin-top:0; color:#1e40af;">
+                         Selected Potential Evidence
+                     </h3>
+
+                     <div id="selectedEvidenceList"></div>
+                </div>
+
+                <div style="margin-bottom:16px">
+                    <button id="reviewButton"
+                            onclick="showSelectedEvidence()"
+                            style="display:none; width:100%">
+                        Review Selected Evidence
+                    </button>
+                </div>
+
+                <div id="objectList">
+                    <div class="empty-state">
+                        No detections available.<br>
+                        Upload and analyze an image.
+                    </div>
+                </div>
+
+                <!-- Selected Evidence Results -->
+                <div id="selectedEvidencePanel"
+                     style="display:none; margin-top:20px;
+                            padding:18px; background:#f0f5ff;
+                            border:1px solid #dbeafe;
+                            border-radius:12px;">
+
+                    <h3 style="margin-top:0; color:#1e40af;">
+                        Selected Potential Evidence
+                    </h3>
+
+                    <div id="selectedEvidenceList"></div>
+                </div>
+
+            </section>
+
+                    <div class="empty-state">
+                        No detections available.<br>
+                        Upload and analyze an image.
+                    </div>
+                </div>
+            </section>
+
+            </section>
+
+            <section class="card">
+                <h2>Analysis Information</h2>
+
+                <div class="notice">
+                    <strong>AI Model:</strong> YOLO11 Nano<br>
+                    <strong>Task:</strong> Object Detection<br>
+                    <strong>Evidence Tags:</strong> Automatic<br>
+                    <strong>Verification:</strong> Human review required
+                </div>
+            </section>
+
+        </div>
+    </div>
+</main>
+
+<footer>
+    VisionLab · Crime Scene Object Detection & Evidence Tagging
+    · Academic Project
+</footer>
+
+<script>
+const imageInput = document.getElementById("imageInput");
+const resultImage = document.getElementById("resultImage");
+const button = document.getElementById("analyzeButton");
+
+imageInput.addEventListener("change", () => {
+    document.getElementById("statusMessage").textContent =
+        "Image selected. Ready to analyze.";
+
+    document.getElementById("totalObjects").textContent = "—";
+    document.getElementById("totalEvidence").textContent = "—";
+    document.getElementById("analysisStatus").textContent = "Ready";
+
+    resultImage.style.display = "none";
+    document.getElementById("placeholder").style.display = "block";
+    document.getElementById("downloadButton").style.display = "none";
+
+    document.getElementById("objectList").innerHTML =
+        '<div class="empty-state">Run detection to view results.</div>';
+});
+
+async function analyzeImage() {
+    const file = imageInput.files[0];
+
+    if (!file) {
+        alert("Please choose an image first.");
+        return;
+    }
+
+    const status = document.getElementById("statusMessage");
+    const objectList = document.getElementById("objectList");
+
+    button.disabled = true;
+    status.textContent = "AI is analyzing the image...";
+    document.getElementById("analysisStatus").textContent = "Processing";
+
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+        const response = await fetch("/detect", {
+            method: "POST",
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || "Analysis failed");
+        }
+
+        document.getElementById("totalObjects").textContent =
+            data.total_objects;
+
+        document.getElementById("totalEvidence").textContent =
+            data.evidence.length;
+
+        document.getElementById("analysisStatus").textContent =
+            "Completed";
+
+        status.textContent = "Analysis completed successfully.";
+
+        // Show image with YOLO bounding boxes
+        resultImage.src = data.image_url;
+        resultImage.style.display = "block";
+
+        document.getElementById("placeholder").style.display =
+            "none";
+
+        // Enable download
+        const download = document.getElementById("downloadButton");
+        download.href = data.image_url;
+        download.style.display = "block";
+
+        // Show detected objects
+        objectList.innerHTML = "";
+        document.getElementById("reviewButton").style.display = "block";
+
+        if (data.evidence.length === 0) {
+            objectList.innerHTML =
+                '<div class="empty-state">No supported objects detected.</div>';
+        }
+
+        data.evidence.forEach(item => {
+            const card = document.createElement("div");
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.className = "evidence-checkbox";
+            checkbox.value = item.evidence_id;
+            checkbox.dataset.object = item.object;
+            checkbox.style.marginRight = "10px";
+
+            const checkboxLabel = document.createElement("label");
+            checkboxLabel.style.display = "block";
+            checkboxLabel.style.marginBottom = "12px";
+            checkboxLabel.style.fontSize = "13px";
+            checkboxLabel.style.cursor = "pointer";
+
+            checkboxLabel.appendChild(checkbox);
+            checkboxLabel.appendChild(
+                document.createTextNode("Mark as potential evidence")
+            );
+
+            card.appendChild(checkboxLabel);
+            card.className = "object-item";
+
+            const top = document.createElement("div");
+            top.className = "object-top";
+
+            const name = document.createElement("span");
+            name.className = "object-name";
+            name.textContent = item.object;
+
+            const id = document.createElement("span");
+            id.className = "evidence-id";
+            id.textContent = item.evidence_id;
+
+            top.append(name, id);
+
+            const confidenceRow = document.createElement("div");
+            confidenceRow.className = "confidence-row";
+
+            const track = document.createElement("div");
+            track.className = "progress-track";
+
+            const fill = document.createElement("div");
+            fill.className = "progress-fill";
+            fill.style.width = item.confidence + "%";
+
+            track.appendChild(fill);
+
+            const value = document.createElement("span");
+            value.className = "confidence-value";
+            value.textContent = item.confidence + "%";
+
+            confidenceRow.append(track, value);
+            card.append(top, confidenceRow);
+            objectList.appendChild(card);
+        });
+
+    } catch (error) {
+        status.textContent = "Error: " + error.message;
+        document.getElementById("analysisStatus").textContent =
+            "Failed";
+    } finally {
+        button.disabled = false;
+    }
+}
+
+
+function showSelectedEvidence() {
+    const selected = document.querySelectorAll(
+        ".evidence-checkbox:checked"
+    );
+
+    const panel = document.getElementById(
+        "selectedEvidencePanel"
+    );
+
+    const list = document.getElementById(
+        "selectedEvidenceList"
+    );
+
+    list.innerHTML = "";
+
+    if (selected.length === 0) {
+        panel.style.display = "block";
+        list.textContent = "Please select at least one object.";
+        return;
+    }
+
+    selected.forEach(item => {
+        const row = document.createElement("div");
+
+        row.style.padding = "10px";
+        row.style.marginBottom = "8px";
+        row.style.background = "white";
+        row.style.borderRadius = "8px";
+
+        row.textContent =
+            item.value + " — " + item.dataset.object;
+
+        list.appendChild(row);
+    });
+
+    const total = document.createElement("p");
+    total.style.fontWeight = "bold";
+    total.textContent =
+        "Total Selected Evidence: " + selected.length;
+
+    list.appendChild(total);
+
+    panel.style.display = "block";
+}
+</script>
+
+</body>
+</html>
