@@ -39,7 +39,6 @@ def video_page():
 def output_image(filename):
     return send_from_directory(OUTPUT_FOLDER, filename)
 
-
 @app.route("/detect", methods=["POST"])
 def detect():
 
@@ -56,50 +55,20 @@ def detect():
     if not image_file.filename.lower().endswith(allowed):
         return jsonify({"error": "Unsupported image format"}), 400
 
-    # Read the uploaded image
+    # Read uploaded image
     image_bytes = np.frombuffer(image_file.read(), np.uint8)
     image = cv2.imdecode(image_bytes, cv2.IMREAD_COLOR)
 
     if image is None:
         return jsonify({"error": "Invalid image file"}), 400
 
-    # Run YOLO detection
-    results = model.predict(
-    source=image,
-    conf=0.25,
-    imgsz=320,
-    device="cpu",
-    verbose=False
-)
-
-    evidence = []
-    evidence_number = 1
-
-    for result in results:
-        for box in result.boxes:
-
-            class_id = int(box.cls[0])
-            object_name = result.names[class_id]
-            confidence = float(box.conf[0])
-
-            coordinates = box.xyxy[0].tolist()
-
-            evidence.append({
-                "evidence_id": f"E-{evidence_number:03d}",
-                "object": object_name,
-                "confidence": round(confidence * 100, 2),
-                "bounding_box": [
-                    round(value, 1)
-                    for value in coordinates
-                ]
-            })
-
-            evidence_number += 1
-
-    # Run lightweight ONNX detection
+    # Run ONNX detection only once
     evidence = model.predict(image, conf=0.25)
 
-    # Draw evidence IDs and bounding boxes
+    # Create a copy for drawing
+    annotated_image = image.copy()
+
+    # Draw bounding boxes and evidence labels
     for item in evidence:
 
         x1, y1, x2, y2 = map(int, item["bounding_box"])
@@ -119,7 +88,7 @@ def detect():
             2
         )
 
-        # Draw a filled label background
+        # Calculate label size
         (text_width, text_height), baseline = cv2.getTextSize(
             label,
             cv2.FONT_HERSHEY_SIMPLEX,
@@ -129,6 +98,7 @@ def detect():
 
         label_y = max(y1, text_height + 12)
 
+        # Draw label background
         cv2.rectangle(
             annotated_image,
             (x1, label_y - text_height - 10),
@@ -137,7 +107,7 @@ def detect():
             -1
         )
 
-        # Draw white text on dark background
+        # Draw white label text
         cv2.putText(
             annotated_image,
             label,
@@ -149,12 +119,16 @@ def detect():
             cv2.LINE_AA
         )
 
-    # Save the annotated image
+    # Save annotated image
     filename = f"detection_{uuid.uuid4().hex}.jpg"
     output_path = os.path.join(OUTPUT_FOLDER, filename)
 
-    cv2.imwrite(output_path, annotated_image)
+    if not cv2.imwrite(output_path, annotated_image):
+        return jsonify({
+            "error": "Could not save analyzed image"
+        }), 500
 
+    # Return detection results
     return jsonify({
         "message": "Analysis completed",
         "total_objects": len(evidence),
